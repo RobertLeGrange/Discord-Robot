@@ -19,4 +19,10 @@ async def hello(ctx):
 async def games(ctx):
     await ctx.send("<@191661345794424832> <@329167323510603786> <@537543052982485013> it gaem time. \nSincerely, Robot")
 
+@client.command()
+async def mel_time(ctx):
+    now = dt.now()
+    current_time = now.strftime("%H:%H")
+    await ctx.send(current_time)
+
 client.run('MTAzMjA0MTAxMDIyMzY0ODc5OA.GPgesj.bM8Qg19LcmmVXLsjuvGtyh292HUEaetJjhuFtI')
