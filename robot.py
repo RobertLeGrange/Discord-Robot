@@ -8,6 +8,7 @@ from discord.ext import commands
 intents = discord.Intents.all()
 client = commands.Bot(command_prefix = '!', intents = intents)
 
+Signature = "\n\nSincerely, Robot"
 
 @client.command()
 async def joke(ctx):
@@ -32,6 +33,23 @@ async def joke(ctx):
 async def on_ready():
     print("Robot is ready!")
     print("---------------")
+
+@client.command(pass_context = True)
+async def join(ctx):
+    if ctx.author.voice:
+        channel = ctx.message.author.voice.channel
+        await channel.connect()
+        await ctx.send("Hi, I have joined the voice channel '{}' now.".format(channel) + Signature)
+    else:
+        await ctx.send("Sorry, but you need to be in the voice channel first in order for me to join." + Signature)
+
+@client.command(pass_context = True)
+async def leave(ctx):
+    if ctx.voice_client:
+        await ctx.guild.voice_client.disconnect()
+        await ctx.send("Goodbye! I've left the voice channel now." + Signature)
+    else:
+        await ctx.send("Sorry, but I'm not in a voice channel at the moment." + Signature)
 
 @client.command()
 async def hello(ctx):
