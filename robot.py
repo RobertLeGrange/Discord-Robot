@@ -1,12 +1,32 @@
 import discord
 from datetime import datetime as dt
 import pytz
-
+import requests
+import json
 from discord.ext import commands
 
 intents = discord.Intents.all()
 client = commands.Bot(command_prefix = '!', intents = intents)
 
+
+@client.command()
+async def joke(ctx):
+    jokeurl = "https://v2.jokeapi.dev/joke/Any?safe-mode"
+    querystring = {"format":"JSON"}
+    headers = {
+    	"X-RapidAPI-Key": "01739a5e22mshd021ebbddf5323ep1f7206jsnbbe2f0ce446e",
+    	"X-RapidAPI-Host": "jokeapi-v2.p.rapidapi.com"
+    }
+    response = requests.request("GET", jokeurl, headers=headers, params=querystring)
+
+    type = json.loads(response.text)['type']
+    if type == 'twopart':
+        setup = json.loads(response.text)['setup']
+        delivery = json.loads(response.text)['delivery']
+        joke = setup + '\n' + delivery
+    if type == 'single':
+        joke = json.loads(response.text)['joke']
+    await ctx.send(joke)
 
 @client.event
 async def on_ready():
