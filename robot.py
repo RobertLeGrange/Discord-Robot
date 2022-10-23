@@ -88,7 +88,10 @@ async def hello(ctx):
 
 @client.command()
 async def games(ctx):
-    await ctx.send("<@191661345794424832> <@329167323510603786> <@537543052982485013> it gaem time. \nSincerely, Robot")
+    user = ctx.author.mention
+    users = ['<@191661345794424832>', '<@329167323510603786>', '<@537543052982485013>']
+    users.remove(user)
+    await ctx.send(' '.join(map(str, users)) + "it gaem time." + Signature)
 
 @client.command()
 async def times(ctx):
