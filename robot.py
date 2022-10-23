@@ -4,6 +4,7 @@ import pytz
 import requests
 import json
 from discord.ext import commands
+from discord import FFmpegPCMAudio
 
 intents = discord.Intents.all()
 client = commands.Bot(command_prefix = '!', intents = intents)
@@ -38,7 +39,9 @@ async def on_ready():
 async def join(ctx):
     if ctx.author.voice:
         channel = ctx.message.author.voice.channel
-        await channel.connect()
+        voice = await channel.connect()
+        source = FFmpegPCMAudio('cena.mp3')
+        player = voice.play(source)
         await ctx.send("Hi, I have joined the voice channel '{}' now.".format(channel) + Signature)
     else:
         await ctx.send("Sorry, but you need to be in the voice channel first in order for me to join." + Signature)
