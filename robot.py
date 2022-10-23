@@ -76,8 +76,9 @@ async def join(ctx):
 @client.command(pass_context = True)
 async def leave(ctx):
     if ctx.voice_client:
+        channel = ctx.guild.voice_client.channel
         await ctx.guild.voice_client.disconnect()
-        await ctx.send("Goodbye! I've left the voice channel now." + Signature)
+        await ctx.send("Goodbye! I've left the '{}' voice channel now.".format(str(channel)) + Signature)
     else:
         await ctx.send("Sorry, but I'm not in a voice channel at the moment." + Signature)
 
