@@ -36,6 +36,33 @@ async def on_ready():
     print("---------------")
 
 @client.command(pass_context = True)
+async def pause(ctx):
+    #voice = ctx.guild.voice_client
+    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+    if voice.is_playing():
+        voice.pause()
+
+@client.command()
+async def resume(ctx):
+    #voice = ctx.guild.voice_client
+    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+    if voice.is_paused():
+        voice.resume()
+
+@client.command()
+async def stop(ctx):
+    #voice = ctx.guild.voice_client
+    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+    voice.stop()
+
+@client.command()
+async def play(ctx, arg):
+    source = FFmpegPCMAudio(arg + '.mp3')
+    #voice = ctx.guild.voice_client
+    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+    player = voice.play(source)
+
+@client.command(pass_context = True)
 async def join(ctx):
     if ctx.author.voice:
         channel = ctx.message.author.voice.channel
