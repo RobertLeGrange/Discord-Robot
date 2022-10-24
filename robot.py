@@ -54,13 +54,39 @@ async def stop(ctx):
     #voice = ctx.guild.voice_client
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
     voice.stop()
+    guild_id = ctx.guild.id
+    queues.pop(guild_id)
 
 @client.command()
 async def play(ctx, arg):
-    source = FFmpegPCMAudio(arg + '.mp3')
+    extension = '.mp3'
+    song = arg + extension
+    source = FFmpegPCMAudio(song)
     #voice = ctx.guild.voice_client
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    player = voice.play(source)
+    player = voice.play(source, after=lambda x=None: check_queue(ctx, ctx.guild.id))
+
+queues = {}
+
+def check_queue(ctx, id):
+    if queues[id] != []:
+        voice = ctx.guild.voice_client
+        source = queues[id].pop(0)
+        player = voice.play(source)
+
+@client.command()
+async def queue(ctx, arg):
+    voice = ctx.guild.voice_client
+    extension = '.mp3'
+    song = arg + extension
+    guild_id = ctx.guild.id
+    source = FFmpegPCMAudio(song)
+    if guild_id in queues:
+        queues[guild_id].append(source)
+    else:
+        queues[guild_id] =[source]
+    await ctx.send("Added '{}' to queue".format(song))
+    await ctx.send(queues[guild_id])
 
 @client.command(pass_context = True)
 async def join(ctx):
@@ -91,7 +117,7 @@ async def games(ctx):
     user = ctx.author.mention
     users = ['<@191661345794424832>', '<@329167323510603786>', '<@537543052982485013>']
     users.remove(user)
-    await ctx.send(' '.join(map(str, users)) + "it gaem time." + Signature)
+    await ctx.send(' '.join(map(str, users)) + " it gaem time." + Signature)
 
 @client.command()
 async def times(ctx):
@@ -106,6 +132,5 @@ async def times(ctx):
     CowTime = dt.now(CowTZ).strftime('%#I:%M %p')
 
     await ctx.send('The times are:\n**Actual Time**: {}\n**Kiwi Time**: {}\n**Cow Time**: {}\n\nSincerely, Robot'.format(MelTime, KiwiTime, CowTime))
-
 
 client.run('MTAzMjA0MTAxMDIyMzY0ODc5OA.GPgesj.bM8Qg19LcmmVXLsjuvGtyh292HUEaetJjhuFtI')
