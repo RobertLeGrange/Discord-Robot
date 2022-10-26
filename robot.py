@@ -1,136 +1,29 @@
 import discord
-from datetime import datetime as dt
-import pytz
-import requests
-import json
 from discord.ext import commands
-from discord import FFmpegPCMAudio
+import os
+import asyncio
 
 intents = discord.Intents.all()
-client = commands.Bot(command_prefix = '!', intents = intents)
+bot = commands.Bot(command_prefix = '!', intents = intents)
 
 Signature = "\n\nSincerely, Robot"
 
-@client.command()
-async def joke(ctx):
-    jokeurl = "https://v2.jokeapi.dev/joke/Any?safe-mode"
-    querystring = {"format":"JSON"}
-    headers = {
-    	"X-RapidAPI-Key": "01739a5e22mshd021ebbddf5323ep1f7206jsnbbe2f0ce446e",
-    	"X-RapidAPI-Host": "jokeapi-v2.p.rapidapi.com"
-    }
-    response = requests.request("GET", jokeurl, headers=headers, params=querystring)
+initial_extensions = []
 
-    type = json.loads(response.text)['type']
-    if type == 'twopart':
-        setup = json.loads(response.text)['setup']
-        delivery = json.loads(response.text)['delivery']
-        joke = setup + '\n' + delivery
-    if type == 'single':
-        joke = json.loads(response.text)['joke']
-    await ctx.send(joke)
+async def setupcogs():
+    for filename in os.listdir('./cogs'):
+        if filename.endswith('.py'):
+            initial_extensions.append('cogs.' + filename[:-3])
+    for extension in initial_extensions:
+        await bot.load_extension(extension)
 
-@client.event
-async def on_ready():
-    print("Robot is ready!")
-    print("---------------")
+async def main():
+    async with bot:
+        await setupcogs()
+        await bot.start('MTAzMjA0MTAxMDIyMzY0ODc5OA.GPgesj.bM8Qg19LcmmVXLsjuvGtyh292HUEaetJjhuFtI')
 
-@client.command(pass_context = True)
-async def pause(ctx):
-    #voice = ctx.guild.voice_client
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    if voice.is_playing():
-        voice.pause()
+if __name__ == '__main__':
+    asyncio.run(main())
 
-@client.command()
-async def resume(ctx):
-    #voice = ctx.guild.voice_client
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    if voice.is_paused():
-        voice.resume()
 
-@client.command()
-async def stop(ctx):
-    #voice = ctx.guild.voice_client
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    voice.stop()
-    guild_id = ctx.guild.id
-    queues.pop(guild_id)
-
-@client.command()
-async def play(ctx, arg):
-    extension = '.mp3'
-    song = arg + extension
-    source = FFmpegPCMAudio(song)
-    #voice = ctx.guild.voice_client
-    voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    player = voice.play(source, after=lambda x=None: check_queue(ctx, ctx.guild.id))
-
-queues = {}
-
-def check_queue(ctx, id):
-    if queues[id] != []:
-        voice = ctx.guild.voice_client
-        source = queues[id].pop(0)
-        player = voice.play(source)
-
-@client.command()
-async def queue(ctx, arg):
-    voice = ctx.guild.voice_client
-    extension = '.mp3'
-    song = arg + extension
-    guild_id = ctx.guild.id
-    source = FFmpegPCMAudio(song)
-    if guild_id in queues:
-        queues[guild_id].append(source)
-    else:
-        queues[guild_id] =[source]
-    await ctx.send("Added '{}' to queue".format(song))
-    await ctx.send(queues[guild_id])
-
-@client.command(pass_context = True)
-async def join(ctx):
-    if ctx.author.voice:
-        channel = ctx.message.author.voice.channel
-        voice = await channel.connect()
-        source = FFmpegPCMAudio('cena.mp3')
-        player = voice.play(source)
-        await ctx.send("Hi, I have joined the voice channel '{}' now.".format(channel) + Signature)
-    else:
-        await ctx.send("Sorry, but you need to be in the voice channel first in order for me to join." + Signature)
-
-@client.command(pass_context = True)
-async def leave(ctx):
-    if ctx.voice_client:
-        channel = ctx.guild.voice_client.channel
-        await ctx.guild.voice_client.disconnect()
-        await ctx.send("Goodbye! I've left the '{}' voice channel now.".format(str(channel)) + Signature)
-    else:
-        await ctx.send("Sorry, but I'm not in a voice channel at the moment." + Signature)
-
-@client.command()
-async def hello(ctx):
-    await ctx.send("Hello, I am Robot!")
-
-@client.command()
-async def games(ctx):
-    user = ctx.author.mention
-    users = ['<@191661345794424832>', '<@329167323510603786>', '<@537543052982485013>']
-    users.remove(user)
-    await ctx.send(' '.join(map(str, users)) + " it gaem time." + Signature)
-
-@client.command()
-async def times(ctx):
-    #now = dt.now()
-    #current_time = now.strftime("%H:%H")
-    MelTZ = pytz.timezone('Australia/Melbourne')
-    KiwiTZ = pytz.timezone('Pacific/Auckland')
-    CowTZ = pytz.timezone('Australia/Queensland')
-
-    MelTime = dt.now(MelTZ).strftime('%#I:%M %p')
-    KiwiTime = dt.now(KiwiTZ).strftime('%#I:%M %p')
-    CowTime = dt.now(CowTZ).strftime('%#I:%M %p')
-
-    await ctx.send('The times are:\n**Actual Time**: {}\n**Kiwi Time**: {}\n**Cow Time**: {}\n\nSincerely, Robot'.format(MelTime, KiwiTime, CowTime))
-
-client.run('MTAzMjA0MTAxMDIyMzY0ODc5OA.GPgesj.bM8Qg19LcmmVXLsjuvGtyh292HUEaetJjhuFtI')
+#bot.run('MTAzMjA0MTAxMDIyMzY0ODc5OA.GPgesj.bM8Qg19LcmmVXLsjuvGtyh292HUEaetJjhuFtI')
