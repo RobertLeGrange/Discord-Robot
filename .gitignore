@@ -2,3 +2,5 @@
 Robot-WIP.py
 testing.py
 *.png
+__pycache__
+WIP.py
