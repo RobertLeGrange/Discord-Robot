@@ -21,7 +21,7 @@ class VoiceChat(commands.Cog):
         if ctx.author.voice:
             channel = ctx.message.author.voice.channel
             voice = await channel.connect()
-            source = FFmpegPCMAudio('cena.mp3')
+            source = FFmpegPCMAudio('.\Music\cena.mp3')
             player = voice.play(source)
             await ctx.send("Hi, I have joined the voice channel '{}' now.".format(channel) + Signature)
         else:
