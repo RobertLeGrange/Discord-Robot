@@ -16,7 +16,7 @@ class Music(commands.Cog):
     def __init__(self, bot):
          self.bot = bot
 
-    @commands.command()
+    @commands.command(help="Plays the requested song")
     async def play(self, ctx, *arg):
         extension = '.mp3'
         parent = './Music'
@@ -26,19 +26,19 @@ class Music(commands.Cog):
         voice = ctx.guild.voice_client
         player = voice.play(source)
 
-    @commands.command(pass_context = True)
+    @commands.command(help="Pauses the song currently playing")
     async def pause(self, ctx):
         voice = ctx.guild.voice_client
         if voice.is_playing():
             voice.pause()
 
-    @commands.command()
+    @commands.command(help="Resumes the song currently paused")
     async def resume(self, ctx):
         voice = ctx.guild.voice_client
         if voice.is_paused():
             voice.resume()
 
-    @commands.command()
+    @commands.command(help="Stops the song currently playing")
     async def stop(self, ctx):
         voice = ctx.guild.voice_client
         voice.stop()
@@ -50,11 +50,11 @@ class Music(commands.Cog):
         path = '/'.join(path_list)
         return path
 
-    @commands.command()
+    @commands.command(help="Lists the songs in the requested folder")
     async def gather_songs(self, ctx, *arg):
         arg_check = [True if x.find("..") >-1 else False for x in arg]
         if any(arg_check):
-            await ctx.send("Get outta ma files")
+            await ctx.send("Get outta ma files" + Signature)
             return None
         parent = './Music'
         path =  await self.create_path(parent, arg)

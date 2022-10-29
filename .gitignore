@@ -1,6 +1,6 @@
 *.mp3
 Robot-WIP.py
-testing.py
+test.py
 *.png
 __pycache__
 WIP.py

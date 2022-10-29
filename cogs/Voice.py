@@ -16,7 +16,7 @@ class VoiceChat(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(pass_context = True)
+    @commands.command(help="Joins the voice channel")
     async def join(self, ctx):
         if ctx.author.voice:
             channel = ctx.message.author.voice.channel
@@ -27,7 +27,7 @@ class VoiceChat(commands.Cog):
         else:
             await ctx.send("Sorry, but you need to be in the voice channel first in order for me to join." + Signature)
 
-    @commands.command()
+    @commands.command(help="Leaves the voice channel")
     async def leave(self, ctx):
         if ctx.voice_client:
             channel = ctx.guild.voice_client.channel

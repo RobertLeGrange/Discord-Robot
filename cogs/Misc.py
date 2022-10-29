@@ -21,7 +21,7 @@ class Misc(commands.Cog):
         print("Robot is ready!", flush=True)
         print("---------------", flush=True)
 
-    @commands.command()
+    @commands.command(help="Tells a joke, sometimes it's even funny")
     async def joke(self, ctx):
         jokeurl = "https://v2.jokeapi.dev/joke/Any?safe-mode"
         querystring = {"format":"JSON"}
@@ -40,18 +40,18 @@ class Misc(commands.Cog):
             joke = json.loads(response.text)['joke']
         await ctx.send(joke)
 
-    @commands.command()
+    @commands.command(help="Hello World!")
     async def hello(self, ctx):
         await ctx.send("Hello, I am Robot!")
 
-    @commands.command()
+    @commands.command(help="Summons people for games")
     async def games(self, ctx):
         user = ctx.author.mention
         users = ['<@191661345794424832>', '<@329167323510603786>', '<@537543052982485013>']
         users.remove(user)
         await ctx.send(' '.join(map(str, users)) + " it gaem time." + Signature)
 
-    @commands.command()
+    @commands.command(help="Lists all the important timezones")
     async def times(self, ctx):
         #now = dt.now()
         #current_time = now.strftime("%H:%H")
