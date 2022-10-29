@@ -9,9 +9,9 @@ from discord.ext import commands
 
 Signature = "\n\nSincerely, Robot"
 
-print('Cog Misc Loaded', flush=True)
+print('Cog General Loaded', flush=True)
 
-class Misc(commands.Cog):
+class General(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -64,4 +64,4 @@ class Misc(commands.Cog):
         await ctx.send('The times are:\n**Actual Time**: {}\n**Kiwi Time**: {}\n**Cow Time**: {}\n\nSincerely, Robot'.format(MelTime, KiwiTime, CowTime))
 
 async def setup(bot):
-    await bot.add_cog(Misc(bot))
+    await bot.add_cog(General(bot))
