@@ -17,9 +17,11 @@ class Music(commands.Cog):
          self.bot = bot
 
     @commands.command()
-    async def play(self, ctx, arg):
+    async def play(self, ctx, *arg):
         extension = '.mp3'
-        song = './Music' + arg + extension
+        parent = './Music'
+        path =  await self.create_path(parent, arg)
+        song = path + extension
         source = FFmpegPCMAudio(song)
         voice = ctx.guild.voice_client
         player = voice.play(source)
@@ -50,6 +52,10 @@ class Music(commands.Cog):
 
     @commands.command()
     async def gather_songs(self, ctx, *arg):
+        arg_check = [True if x.find("..") >-1 else False for x in arg]
+        if any(arg_check):
+            await ctx.send("Get outta ma files")
+            return None
         parent = './Music'
         path =  await self.create_path(parent, arg)
         folder_list, song_list = [], []
