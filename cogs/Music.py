@@ -5,7 +5,7 @@ import os
 
 
 
-queues = {}
+
 
 Signature = "\n\nSincerely, Robot"
 
@@ -22,7 +22,7 @@ class Music(commands.Cog):
         song = './Music' + arg + extension
         source = FFmpegPCMAudio(song)
         voice = ctx.guild.voice_client
-        player = voice.play(source, after=lambda x=None: check_queue(ctx, ctx.guild.id))
+        player = voice.play(source)
 
     @commands.command(pass_context = True)
     async def pause(self, ctx):
@@ -41,13 +41,6 @@ class Music(commands.Cog):
         voice = ctx.guild.voice_client
         voice.stop()
         guild_id = ctx.guild.id
-        queues.pop(guild_id)
-
-    async def check_queue(self, ctx, id):
-        if queues[id] != []:
-            voice = ctx.guild.voice_client
-            source = queues[id].pop(0)
-            player = voice.play(source)
 
     async def create_path(self, parent, arg):
         path_list = [parent]
@@ -70,20 +63,6 @@ class Music(commands.Cog):
         song_list = [s.replace('.mp3','') for s in song_list]
         await ctx.send('Folder List:\n{} '.format(folder_list))
         await ctx.send('Song List:\n{} '.format(song_list))
-
-    @commands.command()
-    async def queue(self, ctx, arg):
-        voice = ctx.guild.voice_client
-        extension = '.mp3'
-        song = arg + extension
-        guild_id = ctx.guild.id
-        source = FFmpegPCMAudio(song)
-        if guild_id in queues:
-            queues[guild_id].append(source)
-        else:
-            queues[guild_id] = [source]
-        await ctx.send("Added '{}' to queue".format(song))
-        await ctx.send(queues[guild_id])
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
