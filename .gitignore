@@ -1,7 +1,7 @@
-*.mp3
-Robot-WIP.py
-test.py
-*.png
+*.env
 __pycache__
+*.mp3
+*.png
+test.py
 Testing.py
 Quiz.py

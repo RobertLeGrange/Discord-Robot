@@ -2,11 +2,15 @@ import discord
 from discord.ext import commands
 import os
 import asyncio
+from dotenv import load_dotenv
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix = '!', intents = intents)
 
 Signature = "\n\nSincerely, Robot"
+
+load_dotenv()
+TOKEN = os.getenv('TOKEN')
 
 initial_extensions = []
 
@@ -20,7 +24,7 @@ async def setupcogs():
 async def main():
     async with bot:
         await setupcogs()
-        await bot.start('MTAzMjA0MTAxMDIyMzY0ODc5OA.GPgesj.bM8Qg19LcmmVXLsjuvGtyh292HUEaetJjhuFtI')
+        await bot.start(TOKEN)
 
 async def find_cog(arg):
     arg = arg.title()
@@ -53,6 +57,3 @@ async def reload(ctx, arg):
 
 if __name__ == '__main__':
     asyncio.run(main())
-
-
-#bot.run('MTAzMjA0MTAxMDIyMzY0ODc5OA.GPgesj.bM8Qg19LcmmVXLsjuvGtyh292HUEaetJjhuFtI')
