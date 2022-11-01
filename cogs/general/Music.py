@@ -8,7 +8,7 @@ import youtube_dl
 
 Signature = "\n\nSincerely, Robot"
 
-print('Cog Music Loaded', flush=True)
+print('General Cog Music Loaded', flush=True)
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''

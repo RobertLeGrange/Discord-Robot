@@ -9,7 +9,7 @@ from discord.ext import commands
 
 Signature = "\n\nSincerely, Robot"
 
-print('Cog General Loaded', flush=True)
+print('General Cog General Loaded', flush=True)
 
 class General(commands.Cog):
 

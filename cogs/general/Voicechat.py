@@ -9,9 +9,9 @@ from discord import FFmpegPCMAudio
 
 Signature = "\n\nSincerely, Robot"
 
-print('Cog VoiceChat Loaded', flush=True)
+print('General Cog VoiceChat Loaded', flush=True)
 
-class VoiceChat(commands.Cog):
+class Voicechat(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -37,4 +37,4 @@ class VoiceChat(commands.Cog):
             await ctx.send("Sorry, but I'm not in a voice channel at the moment." + Signature)
 
 async def setup(bot):
-    await bot.add_cog(VoiceChat(bot))
+    await bot.add_cog(Voicechat(bot))
