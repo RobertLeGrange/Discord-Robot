@@ -19,15 +19,37 @@ class Quiz(commands.Cog):
 
     #Takes in Quiz Setup and retrieves response
     @commands.command(hidden=True)
-    async def quiz_setup(self, ctx, *arg):
+    async def setup(self, ctx, *arg):
         quiz_options = await self.create_quiz_options(arg)
-        print('Quiz_Options: ' + str(quiz_options), flush=True)
+        #print('Quiz_Options: ' + str(quiz_options), flush=True)
         quiz_url = await self.create_quiz_url(quiz_options)
-        print(quiz_url, flush=True)
+        #print(quiz_url, flush=True)
+        self.quiz_details = await self.return_quiz_details(quiz_url)
+        #print(self.quiz_details, flush=True)
+        self.q_num = 0
+
+    @commands.command(hidden=True)
+    async def question(self, ctx):
+        question = self.quiz_details[self.q_num]['question']
+        answer_desc = await self.create_answer_desc(self.quiz_details, self.q_num)
+        embed = discord.Embed(title=question, description=answer_desc)
+        self.question_msg = await ctx.send(embed=embed)
+        self.q_num += 1
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot:
+            return None
+
+    @commands.command(hidden=True)
+    async def check(self, ctx):
+        event_message = await ctx.fetch_message(self.question_msg.id)
+        reaction = event_message.reactions
+        print(reaction, flush=True)
 
     #Takes in arg tuple and creates a quiz_options dictionary
     async def create_quiz_options(self, arg):
-        quiz_options={}
+        quiz_options={'amount':'1'}
         for element in arg:
             if element.startswith('difficulty'):
                 difficulty = element[len('difficulty='):]
@@ -38,9 +60,9 @@ class Quiz(commands.Cog):
             elif element.startswith('category'):
                 category = element[len('category='):]
                 quiz_options['category'] = await self.find_category_id(category)
-            elif element.startswith('count'):
-                count = element[len('count='):]
-                quiz_options['count']=count
+            elif element.startswith('amount'):
+                count = element[len('amount='):]
+                quiz_options['amount']=count
             else:
                 print('Unrecognised argument from command !quiz_setup: ' + element, flush=True)
         return quiz_options
@@ -58,75 +80,31 @@ class Quiz(commands.Cog):
             quiz_url = quiz_url + key + '=' + item + '&'
         return quiz_url
 
-
-
-
-    """
-    async def return_quiz(self,):
-        #unpack dictionary and ping quiz_url
-        #if valid then return results
-
-        https://opentdb.com/api.php?amount=10
-        &category=12
-        &difficulty=easy
-        &type=boolean
-
-
-
-
-
-
-        quizurl = "https://opentdb.com/api.php?amount=3"
-        response = requests.request("GET", quizurl)
-        quiz_details = json.loads(response.text)['results'][0]
-        print(json.loads(response.text), flush=True)
-
-
-
-    #Plays Quiz Theme
-    async def play_theme(self):
-
-    #Ends Quiz
-    @commands.command(hidden=True)
-    async def quiz_end(self, ctx):
-
-    #Creates
-    async def create_description(self, all_answer):
-        if len(all_answer)==2:
-            answers_str = 'True\nFalse'
-        elif len(all_answer)==4:
-            random.shuffle(all_answer)
-            self.answers_dict = {}
-            answers_str = ''
-            for letter, answer in zip(ascii_uppercase[:4], all_answer):
-                self.answers_dict[letter] = answer
-                answers_str += letter + ' : ' + answer + '\n'
-        return answers_str
-
-
-    async def set_colour(self,)
-
-    @commands.command(hidden=True)
-    async def quiz(self, ctx):
-
-        question = html.unescape(quiz_details['question'])
-        self.correct_answer = html.unescape(quiz_details['correct_answer'])
-        all_answer = quiz_details['incorrect_answers']
-        all_answer.append(self.correct_answer)
-
-
-
-        embed = discord.Embed(title=question, description=answers_str, color=discord.Colour.dark_purple())
-        await ctx.send(embed=embed)
-    """
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.author.bot:
-            return None
+    #Pings Quiz API and returns quiz_details
+    async def return_quiz_details(self, quiz_url):
+        response = requests.request("GET", quiz_url)
+        if json.loads(response.text)['response_code']==0:
+            quiz_details = json.loads(response.text)['results']
+            for i in range(len(quiz_details)):
+                quiz_details[i]['question'] = html.unescape(quiz_details[i]['question'])
+                quiz_details[i]['correct_answer'] = html.unescape(quiz_details[i]['correct_answer'])
+                quiz_details[i]['incorrect_answers'] = html.unescape(quiz_details[i]['incorrect_answers'])
+                quiz_details[i]['all_answers'] = quiz_details[i]['incorrect_answers'].copy()
+                quiz_details[i]['all_answers'].append(quiz_details[i]['correct_answer'])
+                random.shuffle(quiz_details[i]['all_answers'])
+                quiz_details[i]['answer_map'] = {}
+                for j in range(len(quiz_details[i]['all_answers'])):
+                    quiz_details[i]['answer_map'][ascii_uppercase[j]] = quiz_details[i]['all_answers'][j]
         else:
-            print('{} guessed {}'.format(message.author, self.answers_dict.get(message.content)), flush=True)
-            if self.answers_dict.get(message.content) == self.correct_answer:
-                await message.channel.send('Correct!')
+            print('Error on Retrieving Quiz : '.format(json.loads(response.text)['response_code']), flush=True)
+        return quiz_details
+
+    #Takes in quiz_details and creates answer_desc for embed
+    async def create_answer_desc(self, quiz_details, q_num):
+        answer_desc = ''
+        for letter, answer in quiz_details[q_num]['answer_map'].items():
+            answer_desc = answer_desc + letter + " : " + answer + '\n'
+        return(answer_desc)
 
 async def setup(bot):
     await bot.add_cog(Quiz(bot))
