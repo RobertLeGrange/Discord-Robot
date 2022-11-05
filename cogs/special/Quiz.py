@@ -30,11 +30,12 @@ class Quiz(commands.Cog):
 
     @commands.command(hidden=True)
     async def question(self, ctx):
-        question = self.quiz_details[self.q_num]['question']
-        answer_desc = await self.create_answer_desc(self.quiz_details, self.q_num)
+        self.current_quiz_detail = self.quiz_details.pop()
+        question = current_quiz_detail['question']
+        answer_desc = await self.create_answer_desc(self.current_quiz_detail)
         embed = discord.Embed(title=question, description=answer_desc)
         self.question_msg = await ctx.send(embed=embed)
-        self.q_num += 1
+        await self.question_msg.add_reaction("🔡")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -44,8 +45,21 @@ class Quiz(commands.Cog):
     @commands.command(hidden=True)
     async def check(self, ctx):
         event_message = await ctx.fetch_message(self.question_msg.id)
-        reaction = event_message.reactions
-        print(reaction, flush=True)
+        reactions = event_message.reactions
+        user_answers = await self.create_user_answers(reactions)
+        print(user_answers, flush=True)
+
+
+    #Takes in reactions and creates a user_answers dictionary
+    async def create_user_answers(self, reactions):
+        emoji_dict = {'🇦':'A', '🇧':'B', '🇨':'C', '🇩':'D'}
+        user_answers = {}
+        for reaction in reactions:
+            users = [user.name async for user in reaction.users()]
+            user_answer = emoji_dict.get(reaction.emoji)
+            if user_answer:
+                user_answers[user_answer] = users
+        return user_answers
 
     #Takes in arg tuple and creates a quiz_options dictionary
     async def create_quiz_options(self, arg):
@@ -100,9 +114,9 @@ class Quiz(commands.Cog):
         return quiz_details
 
     #Takes in quiz_details and creates answer_desc for embed
-    async def create_answer_desc(self, quiz_details, q_num):
+    async def create_answer_desc(self, current_quiz_detail):
         answer_desc = ''
-        for letter, answer in quiz_details[q_num]['answer_map'].items():
+        for letter, answer in current_quiz_detail['answer_map'].items():
             answer_desc = answer_desc + letter + " : " + answer + '\n'
         return(answer_desc)
 
