@@ -7,6 +7,7 @@ from discord.ext import commands
 import random
 import html
 from string import ascii_uppercase
+from collections import Counter
 
 Signature = "\n\nSincerely, Robot"
 
@@ -45,27 +46,51 @@ class Quiz(commands.Cog):
     @commands.command()
     async def lock_in(self, ctx):
         event_message = await ctx.fetch_message(self.question_msg.id)
-        reactions = event_message.reactions
-        user_answers = await self.create_user_answers(reactions)
-        user_count={}
-        for key, value in user_answers.items():
-            for user in value:
-                user_count[user] = user_count.get(user, 0) + 1
-        for key, value in user_count.items():
-            if value > 1:
-                await ctx.send(key + " guessed more than once!")
-                return None
-        correct_users = await self.check_user_answers(user_answers, self.current_quiz_detail)
+        user_answers = await self.create_user_answers(event_message.reactions)
+        cheating_users = await self.check_cheating_users(user_answers)
+        print(cheating_users, flush=True)
+        correct_users = await self.check_correct_users(user_answers, cheating_users, self.current_quiz_detail)
+        print(correct_users, flush=True)
+        if cheating_users:
+            message = await self.format_answer_message(cheating_users) + 'caught cheating!'
+            await ctx.send(message)
         if correct_users:
-            message = 'Correct Users: ' + ' '.join(correct_users)
-        else:
-            message = 'No Correct Users'
-        await ctx.send(message)
+            message = await self.format_answer_message(correct_users) + 'correct!'
+            await ctx.send(message)
         await self.ask_question(ctx)
 
+#ukhutula was caught cheating and is disqualified!
+#ukhutula and fuzz were caught cheating and are disqualified
+#ukhutula was correct and has been awarded 1 point
+#ukhutula and fuzz were correct and have been awarded 1 point
+
+    async def format_answer_message(self, users):
+        message = ''
+        user_count = len(users)
+        if user_count == 1:
+            grammer = ' was '
+            message = users[0] + grammer
+        elif user_count > 1:
+            grammer = ' were '
+            for i in range(user_count-1):
+                message = message + users[i] + ', '
+            message = message + 'and ' + users[-1] + grammer
+        return message
+
+    #Takes in user_answers and returns cheating_users
+    async def check_cheating_users(self,user_answers):
+        flat_users = []
+        cheating_users = []
+        for users in user_answers.values():
+            for user in users:
+                flat_users.append(user)
+        for user, answer_count in Counter(flat_users).items():
+            if answer_count > 1:
+                cheating_users.append(user)
+        return cheating_users
+
     #Takes in user_answers and current_quiz_detail and returns correct_users
-    async def check_user_answers(self, user_answers, current_quiz_detail):
-        #print(current_quiz_detail, flush=True)
+    async def check_correct_users(self, user_answers, cheating_users, current_quiz_detail):
         correct_users = []
         for letter, answer in current_quiz_detail['answer_map'].items():
             if current_quiz_detail['correct_answer'] == answer:
@@ -78,13 +103,13 @@ class Quiz(commands.Cog):
     #Takes in reactions and creates a user_answers dictionary
     async def create_user_answers(self, reactions):
         emoji_dict = {'🇦':'A', '🇧':'B', '🇨':'C', '🇩':'D'}
-        user_answers = {}
+        user_answers = {} #A dictionary of key: letter_answer , value: users with Robot remvoed
         for reaction in reactions:
             users = [user.name async for user in reaction.users()]
             users.remove('Robot')
-            user_answer = emoji_dict.get(reaction.emoji)
-            if user_answer:
-                user_answers[user_answer] = users
+            letter_answer = emoji_dict.get(reaction.emoji)
+            if letter_answer:
+                user_answers[letter_answer] = users
         return user_answers
 
     #Takes in arg tuple and creates a quiz_options dictionary
