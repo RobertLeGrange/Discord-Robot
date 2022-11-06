@@ -18,7 +18,7 @@ class Quiz(commands.Cog):
         self.bot = bot
 
     #Takes in Quiz Setup and retrieves response
-    @commands.command(hidden=True)
+    @commands.command()
     async def setup(self, ctx, *arg):
         quiz_options = await self.create_quiz_options(arg)
         #print('Quiz_Options: ' + str(quiz_options), flush=True)
@@ -26,34 +26,42 @@ class Quiz(commands.Cog):
         #print(quiz_url, flush=True)
         self.quiz_details = await self.return_quiz_details(quiz_url)
         #print(self.quiz_details, flush=True)
+        await self.ask_question(ctx)
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def question(self, ctx):
+        await self.ask_question(ctx)
+
+    async def ask_question(self, ctx):
         self.current_quiz_detail = self.quiz_details.pop()
         question = self.current_quiz_detail['question']
         answer_desc = await self.create_answer_desc(self.current_quiz_detail)
         embed = discord.Embed(title=question, description=answer_desc)
         self.question_msg = await ctx.send(embed=embed)
-        await self.question_msg.add_reaction("🔡")
+        for reaction in {'🇦':'A', '🇧':'B', '🇨':'C', '🇩':'D'}.keys():
+            await self.question_msg.add_reaction(reaction)
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.author.bot:
-            return None
 
-    @commands.command(hidden=True)
-    async def check(self, ctx):
+    @commands.command()
+    async def lock_in(self, ctx):
         event_message = await ctx.fetch_message(self.question_msg.id)
         reactions = event_message.reactions
         user_answers = await self.create_user_answers(reactions)
-        #print(user_answers, flush=True)
+        user_count={}
+        for key, value in user_answers.items():
+            for user in value:
+                user_count[user] = user_count.get(user, 0) + 1
+        for key, value in user_count.items():
+            if value > 1:
+                await ctx.send(key + " guessed more than once!")
+                return None
         correct_users = await self.check_user_answers(user_answers, self.current_quiz_detail)
         if correct_users:
             message = 'Correct Users: ' + ' '.join(correct_users)
         else:
-            print('else statement reached', flush=True)
-            message = 'No Correct Users, try again!'
+            message = 'No Correct Users'
         await ctx.send(message)
+        await self.ask_question(ctx)
 
     #Takes in user_answers and current_quiz_detail and returns correct_users
     async def check_user_answers(self, user_answers, current_quiz_detail):
@@ -73,6 +81,7 @@ class Quiz(commands.Cog):
         user_answers = {}
         for reaction in reactions:
             users = [user.name async for user in reaction.users()]
+            users.remove('Robot')
             user_answer = emoji_dict.get(reaction.emoji)
             if user_answer:
                 user_answers[user_answer] = users
@@ -119,7 +128,8 @@ class Quiz(commands.Cog):
             for i in range(len(quiz_details)):
                 quiz_details[i]['question'] = html.unescape(quiz_details[i]['question'])
                 quiz_details[i]['correct_answer'] = html.unescape(quiz_details[i]['correct_answer'])
-                quiz_details[i]['incorrect_answers'] = html.unescape(quiz_details[i]['incorrect_answers'])
+                for j in range(len(quiz_details[i]['incorrect_answers'])):
+                    quiz_details[i]['incorrect_answers'][j] = html.unescape(quiz_details[i]['incorrect_answers'][j])
                 quiz_details[i]['all_answers'] = quiz_details[i]['incorrect_answers'].copy()
                 quiz_details[i]['all_answers'].append(quiz_details[i]['correct_answer'])
                 random.shuffle(quiz_details[i]['all_answers'])
