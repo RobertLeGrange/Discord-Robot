@@ -26,12 +26,11 @@ class Quiz(commands.Cog):
         #print(quiz_url, flush=True)
         self.quiz_details = await self.return_quiz_details(quiz_url)
         #print(self.quiz_details, flush=True)
-        self.q_num = 0
 
     @commands.command(hidden=True)
     async def question(self, ctx):
         self.current_quiz_detail = self.quiz_details.pop()
-        question = current_quiz_detail['question']
+        question = self.current_quiz_detail['question']
         answer_desc = await self.create_answer_desc(self.current_quiz_detail)
         embed = discord.Embed(title=question, description=answer_desc)
         self.question_msg = await ctx.send(embed=embed)
@@ -47,8 +46,26 @@ class Quiz(commands.Cog):
         event_message = await ctx.fetch_message(self.question_msg.id)
         reactions = event_message.reactions
         user_answers = await self.create_user_answers(reactions)
-        print(user_answers, flush=True)
+        #print(user_answers, flush=True)
+        correct_users = await self.check_user_answers(user_answers, self.current_quiz_detail)
+        if correct_users:
+            message = 'Correct Users: ' + ' '.join(correct_users)
+        else:
+            print('else statement reached', flush=True)
+            message = 'No Correct Users, try again!'
+        await ctx.send(message)
 
+    #Takes in user_answers and current_quiz_detail and returns correct_users
+    async def check_user_answers(self, user_answers, current_quiz_detail):
+        #print(current_quiz_detail, flush=True)
+        correct_users = []
+        for letter, answer in current_quiz_detail['answer_map'].items():
+            if current_quiz_detail['correct_answer'] == answer:
+                correct_letter = letter
+        for letter, users in user_answers.items():
+            if letter == correct_letter:
+                correct_users = users
+        return correct_users
 
     #Takes in reactions and creates a user_answers dictionary
     async def create_user_answers(self, reactions):
@@ -83,7 +100,7 @@ class Quiz(commands.Cog):
 
     #Takes in category string and finds category_id
     async def find_category_id(self, category):
-        categories_dict = {'Animals': 27, 'Art': 25, 'Celebrities': 26, 'Entertainment: Board Games': 16, 'Entertainment: Books': 10, 'Entertainment: Cartoon & Animations': 32, 'Entertainment: Comics': 29, 'Entertainment: Film': 11, 'Entertainment: Japanese Anime & Manga': 31, 'Entertainment: Music': 12, 'Entertainment: Musicals & Theatres': 13, 'Entertainment: Television': 14, 'Entertainment: Video Games': 15, 'General Knowledge': 9, 'Geography': 22, 'History': 23, 'Mythology': 20, 'Politics': 24, 'Science & Nature': 17, 'Science: Computers': 18, 'Science: Gadgets': 30, 'Science: Mathematics': 19, 'Sports': 21, 'Vehicles': 28}
+        categories_dict = {'Animals': 27, 'Art': 25, 'Celebrities': 26, 'Board_Games': 16, 'Books': 10, 'Cartoons': 32, 'Comics': 29, 'Film': 11, 'Anime/Manga': 31, 'Music': 12, 'Theatre': 13, 'Television': 14, 'Video_Games': 15, 'General_Knowledge': 9, 'Geography': 22, 'History': 23, 'Mythology': 20, 'Politics': 24, 'Science/Nature': 17, 'Computers': 18, 'Gadgets': 30, 'Maths': 19, 'Sports': 21, 'Vehicles': 28}
         category_id = str(categories_dict[category])
         return category_id
 
