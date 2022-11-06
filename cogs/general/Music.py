@@ -113,8 +113,19 @@ class Music(commands.Cog):
             if not song.endswith('.mp3'):
                 song_list.remove(song)
         song_list = [s.replace('.mp3','') for s in song_list]
-        await ctx.send('Folder List:\n{} '.format(folder_list))
-        await ctx.send('Song List:\n{} '.format(song_list))
+        title = "Below are the folders and songs in {}".format(path[2:])
+        if folder_list:
+            folders = ("\n").join(folder_list)
+        else:
+            folders="None"
+        if song_list:
+            songs = ("\n").join(song_list)
+        else:
+            songs="None"
+        embed = discord.Embed(title=title)
+        embed.add_field(name="Folders", value=folders, inline=False)
+        embed.add_field(name="Songs", value=songs, inline=False)
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
