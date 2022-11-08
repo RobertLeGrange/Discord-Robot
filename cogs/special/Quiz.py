@@ -15,56 +15,72 @@ print('Special Cog Quiz Loaded', flush=True)
 
 class Quiz(commands.Cog):
 
+
     def __init__(self, bot):
         self.bot = bot
+
 
     #Takes in Quiz Setup and retrieves response
     @commands.command()
     async def setup(self, ctx, *arg):
+        """
+        The command invoked by users to setup and start the quiz.
+
+        Arguments:
+        ctx (Context): Represents the context in which a command is being invoked under.
+        *arg (tuple): Optional Arguments to specify quiz options.
+        """
         quiz_options = await self.create_quiz_options(arg)
-        #print('Quiz_Options: ' + str(quiz_options), flush=True)
         quiz_url = await self.create_quiz_url(quiz_options)
-        #print(quiz_url, flush=True)
         self.quiz_details = await self.return_quiz_details(quiz_url)
-        #print(self.quiz_details, flush=True)
         await self.ask_question(ctx)
 
     @commands.command()
     async def question(self, ctx):
-        await self.ask_question(ctx)
+
+        error_message = await self.ask_question(ctx)
+        await ctx.send(error_message + Signature)
 
     async def ask_question(self, ctx):
-        self.current_quiz_detail = self.quiz_details.pop()
-        question = self.current_quiz_detail['question']
-        answer_desc = await self.create_answer_desc(self.current_quiz_detail)
-        embed = discord.Embed(title=question, description=answer_desc)
-        self.question_msg = await ctx.send(embed=embed)
-        for reaction in {'🇦':'A', '🇧':'B', '🇨':'C', '🇩':'D'}.keys():
-            await self.question_msg.add_reaction(reaction)
-
+        if self.quiz_details:
+            self.current_quiz_detail = self.quiz_details.pop()
+            question = self.current_quiz_detail['question']
+            answer_desc = await self.create_answer_desc(self.current_quiz_detail)
+            embed = discord.Embed(title=question, description=answer_desc)
+            self.question_msg = await ctx.send(embed=embed)
+            for reaction in {'🇦':'A', '🇧':'B', '🇨':'C', '🇩':'D'}.keys():
+                await self.question_msg.add_reaction(reaction)
+        else:
+            error_message = 'Sorry, but there are no more questions!\nPlease use the setup command to retrieve more questions.'
+            return error_message
 
     @commands.command()
     async def lock_in(self, ctx):
         event_message = await ctx.fetch_message(self.question_msg.id)
         user_answers = await self.create_user_answers(event_message.reactions)
+        correct_letter = await self.return_correct_letter(self.current_quiz_detail)
         cheating_users = await self.check_cheating_users(user_answers)
-        print(cheating_users, flush=True)
-        correct_users = await self.check_correct_users(user_answers, cheating_users, self.current_quiz_detail)
-        print(correct_users, flush=True)
+        correct_users = await self.check_correct_users(user_answers, cheating_users, correct_letter)
+        message = ''
         if cheating_users:
-            message = await self.format_answer_message(cheating_users) + 'caught cheating!'
-            await ctx.send(message)
+            message = await self.format_answer_message(cheating_users) + 'caught cheating! They have been disqualified!\n\n'
         if correct_users:
-            message = await self.format_answer_message(correct_users) + 'correct!'
-            await ctx.send(message)
+            message = message + await self.format_answer_message(correct_users) + "correct with their answer of {} : '{}'.".format(correct_letter, self.current_quiz_detail['answer_map'][correct_letter])
+        else:
+            message = message + "Nobody was correct! The answer was {} : '{}'".format(correct_letter, self.current_quiz_detail['answer_map'][correct_letter])
+        await ctx.send(message + Signature)
         await self.ask_question(ctx)
 
-#ukhutula was caught cheating and is disqualified!
-#ukhutula and fuzz were caught cheating and are disqualified
-#ukhutula was correct and has been awarded 1 point
-#ukhutula and fuzz were correct and have been awarded 1 point
-
     async def format_answer_message(self, users):
+        """
+        Lists users for use in a message sent by Robot.
+
+        Arguments:
+        users (list): List of user strings
+
+        Returns:
+        message (string): gramatically correct list of users
+        """
         message = ''
         user_count = len(users)
         if user_count == 1:
@@ -74,11 +90,19 @@ class Quiz(commands.Cog):
             grammer = ' were '
             for i in range(user_count-1):
                 message = message + users[i] + ', '
-            message = message + 'and ' + users[-1] + grammer
+            message = message[:-2] + 'and ' + users[-1] + grammer
         return message
 
-    #Takes in user_answers and returns cheating_users
-    async def check_cheating_users(self,user_answers):
+    async def check_cheating_users(self, user_answers):
+        """
+        Returns users that cheated by selecting multiple answers.
+
+        Arguments:
+        user_answers (dict of str : list): Mapping of answer to users
+
+        Returns:
+        cheating_users (list): Users that cheated
+        """
         flat_users = []
         cheating_users = []
         for users in user_answers.values():
@@ -89,21 +113,54 @@ class Quiz(commands.Cog):
                 cheating_users.append(user)
         return cheating_users
 
-    #Takes in user_answers and current_quiz_detail and returns correct_users
-    async def check_correct_users(self, user_answers, cheating_users, current_quiz_detail):
+    async def check_correct_users(self, user_answers, cheating_users, correct_letter):
+        """
+        Returns users that were correct without cheating.
+
+        Arguments:
+        user_answers (dict of str : list): Mapping of answer to users
+        cheating_users (list): Users that cheated
+        correct_letter (str): The correct answer represented by a letter
+
+        Returns:
+        correct_users (list): Users that were correct
+        """
         correct_users = []
-        for letter, answer in current_quiz_detail['answer_map'].items():
-            if current_quiz_detail['correct_answer'] == answer:
-                correct_letter = letter
         for letter, users in user_answers.items():
             if letter == correct_letter:
                 correct_users = users
+        for user in correct_users:
+            if user in cheating_users:
+                correct_users.remove(user)
         return correct_users
 
-    #Takes in reactions and creates a user_answers dictionary
+    async def return_correct_letter(self, current_quiz_detail):
+        """
+        Returns the correct answer for the current quiz question.
+
+        Arguments:
+        current_quiz_detail (dict): Mapping of quiz parameters for current question
+
+        Returns:
+        correct_letter (str): The correct answer represented by a letter
+        """
+        for letter, answer in current_quiz_detail['answer_map'].items():
+            if current_quiz_detail['correct_answer'] == answer:
+                correct_letter = letter
+        return correct_letter
+
     async def create_user_answers(self, reactions):
+        """
+        Returns the answer from each user's reaction to the question.
+
+        Arguments:
+        reactions (list): Reactions to a message
+
+        Returns:
+        user_answers (dict of str : list): Mapping of answer to users
+        """
         emoji_dict = {'🇦':'A', '🇧':'B', '🇨':'C', '🇩':'D'}
-        user_answers = {} #A dictionary of key: letter_answer , value: users with Robot remvoed
+        user_answers = {}
         for reaction in reactions:
             users = [user.name async for user in reaction.users()]
             users.remove('Robot')
@@ -112,8 +169,16 @@ class Quiz(commands.Cog):
                 user_answers[letter_answer] = users
         return user_answers
 
-    #Takes in arg tuple and creates a quiz_options dictionary
     async def create_quiz_options(self, arg):
+        """
+        Creates a dictionary of quiz options from user provided arguments.
+
+        Arguments:
+        arg (tuple): Strings provided by user with selected quiz options
+
+        Returns:
+        quiz_options (dict of str : str): Mapping of user selected quiz options
+        """
         quiz_options={'amount':'1'}
         for element in arg:
             if element.startswith('difficulty'):
@@ -134,19 +199,53 @@ class Quiz(commands.Cog):
 
     #Takes in category string and finds category_id
     async def find_category_id(self, category):
-        categories_dict = {'Animals': 27, 'Art': 25, 'Celebrities': 26, 'Board_Games': 16, 'Books': 10, 'Cartoons': 32, 'Comics': 29, 'Film': 11, 'Anime/Manga': 31, 'Music': 12, 'Theatre': 13, 'Television': 14, 'Video_Games': 15, 'General_Knowledge': 9, 'Geography': 22, 'History': 23, 'Mythology': 20, 'Politics': 24, 'Science/Nature': 17, 'Computers': 18, 'Gadgets': 30, 'Maths': 19, 'Sports': 21, 'Vehicles': 28}
+        """
+        Returns the category ID for use in the quiz_options dict.
+
+        Arguments:
+        category (str): Name of category provided by user
+
+        Returns:
+        category_id (int): ID of category
+        """
+        categories_dict = {
+            'Animals': 27, 'Art': 25, 'Celebrities': 26,
+            'Board_Games': 16, 'Books': 10, 'Cartoons': 32, 'Comics': 29,
+            'Film': 11, 'Anime/Manga': 31, 'Music': 12, 'Theatre': 13,
+            'Television': 14, 'Video_Games': 15, 'General_Knowledge': 9,
+            'Geography': 22, 'History': 23, 'Mythology': 20, 'Politics': 24,
+            'Science/Nature': 17, 'Computers': 18, 'Gadgets': 30, 'Maths': 19,
+            'Sports': 21, 'Vehicles': 28
+            }
         category_id = str(categories_dict[category])
         return category_id
 
     #Takes in quiz_options dictionary and creates quiz_url string
     async def create_quiz_url(self, quiz_options):
+        """
+        Returns a custom opentdb URL to retrieve the quiz from.
+
+        Arguments:
+        quiz_options (dict of str : str): Mapping of user selected quiz options
+
+        Returns:
+        quiz_url (str): URL to retrieve quiz data from.
+        """
         quiz_url = "https://opentdb.com/api.php?"
         for key, item in quiz_options.items():
             quiz_url = quiz_url + key + '=' + item + '&'
         return quiz_url
 
-    #Pings Quiz API and returns quiz_details
     async def return_quiz_details(self, quiz_url):
+        """
+        Retrieves quizzes from opentdb or prints an error if unsuccessful.
+
+        Arguments:
+        quiz_url (str): URL to retrieve quiz data from.
+
+        Returns:
+        quiz_details (list): All quizzes retrieved from opentdb.com
+        """
         response = requests.request("GET", quiz_url)
         if json.loads(response.text)['response_code']==0:
             quiz_details = json.loads(response.text)['results']
@@ -165,8 +264,16 @@ class Quiz(commands.Cog):
             print('Error on Retrieving Quiz : '.format(json.loads(response.text)['response_code']), flush=True)
         return quiz_details
 
-    #Takes in quiz_details and creates answer_desc for embed
     async def create_answer_desc(self, current_quiz_detail):
+        """
+        Returns the message containing possible answers.
+
+        Arguments:
+        current_quiz_detail (dict): Mapping of quiz parameters for current question
+
+        Returns:
+        answer_desc (str): Multiple choice message to be sent by Robot
+        """
         answer_desc = ''
         for letter, answer in current_quiz_detail['answer_map'].items():
             answer_desc = answer_desc + letter + " : " + answer + '\n'
