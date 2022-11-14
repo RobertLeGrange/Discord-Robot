@@ -16,16 +16,16 @@ TOKEN = os.getenv('TOKEN')
 
 initial_extensions = []
 
-async def setupcogs():
-    for filename in os.listdir('./cogs/general'):
+async def setupcogs(path):
+    for filename in os.listdir('./cogs/' + path):
         if filename.endswith('.py'):
-            initial_extensions.append('cogs.general.' + filename[:-3])
+            initial_extensions.append('cogs.' + path + '.' + filename[:-3])
     for extension in initial_extensions:
         await bot.load_extension(extension)
 
 async def main():
     async with bot:
-        await setupcogs()
+        await setupcogs('general')
         logger = logging.getLogger('discord')
         logger.setLevel(logging.INFO)
 

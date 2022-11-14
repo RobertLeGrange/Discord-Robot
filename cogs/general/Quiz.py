@@ -20,7 +20,6 @@ class Quiz(commands.Cog):
         self.bot = bot
 
 
-    #Takes in Quiz Setup and retrieves response
     @commands.command()
     async def setup(self, ctx, *arg):
         """
@@ -90,7 +89,7 @@ class Quiz(commands.Cog):
             grammer = ' were '
             for i in range(user_count-1):
                 message = message + users[i] + ', '
-            message = message[:-2] + 'and ' + users[-1] + grammer
+            message = message[:-2] + ' and ' + users[-1] + grammer
         return message
 
     async def check_cheating_users(self, user_answers):
@@ -197,7 +196,6 @@ class Quiz(commands.Cog):
                 print('Unrecognised argument from command !quiz_setup: ' + element, flush=True)
         return quiz_options
 
-    #Takes in category string and finds category_id
     async def find_category_id(self, category):
         """
         Returns the category ID for use in the quiz_options dict.
@@ -220,7 +218,6 @@ class Quiz(commands.Cog):
         category_id = str(categories_dict[category])
         return category_id
 
-    #Takes in quiz_options dictionary and creates quiz_url string
     async def create_quiz_url(self, quiz_options):
         """
         Returns a custom opentdb URL to retrieve the quiz from.
