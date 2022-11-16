@@ -1,0 +1,7 @@
+discord-py
+pytz
+requests
+youtube-dl
+wheel
+python-dotenv
+PyNaCl
